@@ -30,20 +30,67 @@ const isDev = process.env.NODE_ENV !== 'production';
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
 const corsOptions = {
-  origin: [
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      clientUrl, 
+      'http://localhost:3000', 
+      'http://localhost:3001', 
+      'http://127.0.0.1:3000', 
+      'http://127.0.0.1:3001',
+      'https://freelance-marketplace-frontend.netlify.app',
+      'https://freelance-markeetplace.netlify.app',
+      'https://freelance-marketplace-frontend.netlify.app/',
+      'https://freelance-markeetplace.netlify.app/'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+app.use(cors(corsOptions));
+
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
     clientUrl, 
     'http://localhost:3000', 
     'http://localhost:3001', 
     'http://127.0.0.1:3000', 
     'http://127.0.0.1:3001',
     'https://freelance-marketplace-frontend.netlify.app',
-    'https://freelance-markeetplace.netlify.app'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-};
-app.use(cors(corsOptions));
+    'https://freelance-markeetplace.netlify.app',
+    'https://freelance-marketplace-frontend.netlify.app/',
+    'https://freelance-markeetplace.netlify.app/'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept');
+  res.setHeader('Vary', 'Origin');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // Relax helmet for /uploads to allow cross-origin images
 app.use('/uploads', helmet({
