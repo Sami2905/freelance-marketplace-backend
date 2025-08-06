@@ -30,7 +30,15 @@ const isDev = process.env.NODE_ENV !== 'production';
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
 const corsOptions = {
-  origin: [clientUrl, 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'],
+  origin: [
+    clientUrl, 
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'http://127.0.0.1:3000', 
+    'http://127.0.0.1:3001',
+    'https://freelance-marketplace-frontend.netlify.app',
+    'https://freelance-markeetplace.netlify.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -86,13 +94,31 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://freelance-marketplace-frontend.netlify.app',
+    'https://freelance-markeetplace.netlify.app'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Vary', 'Origin');
   next();
 }, express.static(uploadsPath, {
-  setHeaders: (res) => {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  setHeaders: (res, path) => {
+    const origin = res.req?.headers?.origin;
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://freelance-marketplace-frontend.netlify.app',
+      'https://freelance-markeetplace.netlify.app'
+    ];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
   }
